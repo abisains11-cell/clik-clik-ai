@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#a78bfa">
+  <title>Clik Clik AI</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Arial, sans-serif; color: #352b50;
+      background: #f8f5ff;
+    }
+    header {
+      padding: 26px 20px; color: white;
+      background: linear-gradient(135deg, #8b5cf6, #e879f9);
+      border-radius: 0 0 26px 26px;
+    }
+    header h1 { margin: 0; font-size: 29px; }
+    header p { margin: 8px 0 0; }
+    main { width: min(100% - 28px, 620px); margin: 18px auto; }
+    .card {
+      background: white; padding: 18px; margin-bottom: 15px;
+      border-radius: 19px; box-shadow: 0 5px 18px #60408012;
+    }
+    h2 { font-size: 18px; margin: 0 0 14px; }
+    .upload {
+      padding: 24px 12px; text-align: center;
+      border: 2px dashed #c4a8f7; border-radius: 15px;
+      background: #fcfaff;
+    }
+    .upload .emoji { font-size: 38px; }
+    .pick, button {
+      display: inline-block; border: 0; border-radius: 12px;
+      padding: 13px 17px; font-size: 15px; font-weight: 700;
+      background: #9b7aea; color: white; cursor: pointer;
+    }
+    input[type=file] { display: none; }
+    video { display: block; width: 100%; margin-top: 14px; border-radius: 12px; }
+    label.field { display: block; margin: 14px 0 6px; font-size: 14px; font-weight: 700; }
+    select {
+      width: 100%; padding: 13px; border: 1px solid #e5dcf2;
+      border-radius: 11px; background: white; color: #352b50; font-size: 15px;
+    }
+    button { width: 100%; margin-top: 14px; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .status {
+      padding: 13px; border-radius: 12px; background: #f4efff;
+      font-size: 13px; line-height: 1.55; overflow-wrap: anywhere;
+    }
+    .muted { color: #887a9a; font-size: 12px; line-height: 1.5; }
+    .clip { padding: 13px 0; border-bottom: 1px solid #eee8f7; }
+    .clip:last-child { border-bottom: 0; }
+    .download {
+      display: inline-block; margin-top: 10px; padding: 11px 14px;
+      border-radius: 10px; color: white; background: #7c55c7;
+      text-decoration: none; font-weight: 700; font-size: 13px;
+    }
+    footer { text-align: center; padding: 12px 15px 25px; color: #9b8baa; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>✨ Clik Clik AI</h1>
+    <p>Automatic Video Clipper</p>
+    <p>Potong video menjadi beberapa klip dengan mudah.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>🎬 Upload video</h2>
+      <div class="upload">
+        <div class="emoji">📹</div>
+        <p>Pilih video dari galeri HP</p>
+        <label class="pick" for="videoInput">Pilih Video</label>
+        <input id="videoInput" type="file" accept="video/*">
+      </div>
+      <video id="preview" controls playsinline hidden></video>
+      <p id="fileInfo" class="muted"></p>
+    </section>
+
+    <section class="card">
+      <h2>⚙️ Pengaturan klip</h2>
+      <label class="field" for="duration">Durasi setiap klip</label>
+      <select id="duration">
+        <option value="15">15 detik</option>
+        <option value="30" selected>30 detik</option>
+        <option value="45">45 detik</option>
+        <option value="60">60 detik</option>
+      </select>
+
+      <label class="field" for="count">Jumlah klip</label>
+      <select id="count">
+        <option value="2">2 klip</option>
+        <option value="3" selected>3 klip</option>
+        <option value="5">5 klip</option>
+        <option value="10">10 klip</option>
+      </select>
+
+      <label class="field" for="format">Format video</label>
+      <select id="format">
+        <option value="9:16" selected>Vertikal 9:16 (TikTok/Reels/Shorts)</option>
+        <option value="16:9">Horizontal 16:9 (YouTube)</option>
+        <option value="1:1">Kotak 1:1</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <h2>✂️ Auto Cut</h2>
+      <div id="status" class="status">Pilih video terlebih dahulu untuk memulai.</div>
+      <button id="cutButton" disabled>✂️ MULAI AUTO CUT</button>
+      <p class="muted">
+        Versi awal ini membagi video menjadi beberapa bagian secara otomatis.
+        Ini belum memilih momen paling menarik dengan AI. Pemrosesan dilakukan
+        di browser dan dapat terasa berat untuk video besar.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>📂 Hasil klip</h2>
+      <div id="results" class="status">Belum ada klip yang dibuat.</div>
+    </section>
+  </main>
+
+  <footer>Clik Clik AI © 2026 · Create your best moments ✨</footer>
+
+  <script type="module">
+    import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+    import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
+
+    const input = document.getElementById("videoInput");
+    const preview = document.getElementById("preview");
+    const fileInfo = document.getElementById("fileInfo");
+    const cutButton = document.getElementById("cutButton");
+    const statusBox = document.getElementById("status");
+    const results = document.getElementById("results");
+
+    let ffmpeg;
+    let engineLoaded = false;
+    let busy = false;
+    let sourceUrl = null;
+    let resultUrls = [];
+
+    function setStatus(message) {
+      statusBox.textContent = message;
+    }
+
+    function clearResults() {
+      for (const url of resultUrls) URL.revokeObjectURL(url);
+      resultUrls = [];
+      results.replaceChildren();
+      results.textContent = "Belum ada klip yang dibuat.";
+    }
+
+    input.addEventListener("change", () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("video/")) {
+        alert("Silakan pilih file video.");
+        input.value = "";
+        return;
+      }
+      if (file.size > 100 * 1024 * 1024) {
+        alert("Untuk percobaan awal, pilih video maksimal 100 MB.");
+        input.value = "";
+        return;
+      }
+
+      if (sourceUrl) URL.revokeObjectURL(sourceUrl);
+      sourceUrl = URL.createObjectURL(file);
+      preview.src = sourceUrl;
+      preview.hidden = false;
+      fileInfo.textContent = `${file.name} · ${(file.size / 1048576).toFixed(1)} MB`;
+      cutButton.disabled = false;
+      setStatus("Video siap. Tekan MULAI AUTO CUT untuk memproses.");
+      clearResults();
+    });
+
+    async function loadEngine() {
+      if (engineLoaded) return;
+
+      setStatus("Mengunduh mesin pemotong video. Jangan tutup halaman...");
+      ffmpeg = new FFmpeg();
+
+      const coreBase = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+      const coreURL = await toBlobURL(`${coreBase}/ffmpeg-core.js`, "text/javascript");
+      const wasmURL = await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, "application/wasm");
+
+      await ffmpeg.load({ coreURL, wasmURL });
+      engineLoaded = true;
+    }
+
+    function videoFilter(format) {
+      if (format === "9:16") {
+        return "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280";
+      }
+      if (format === "1:1") {
+        return "scale=720:720:force_original_aspect_ratio=increase,crop=720:720";
+      }
+      return "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2";
+    }
+
+    function addResult(index, url, start, duration) {
+      const wrap = document.createElement("div");
+      wrap.className = "clip";
+
+      const heading = document.createElement("strong");
+      heading.textContent = `Klip ${index} · mulai ${start.toFixed(1)} detik`;
+
+      const player = document.createElement("video");
+      player.controls = true;
+      player.playsInline = true;
+      player.src = url;
+
+      const link = document.createElement("a");
+      link.className = "download";
+      link.href = url;
+      link.download = `clik-clik-klip-${index}.mp4`;
+      link.textContent = "⬇ Download MP4";
+
+      const detail = document.createElement("p");
+      detail.className = "muted";
+      detail.textContent = `Durasi sekitar ${duration.toFixed(1)} detik`;
+
+      wrap.append(heading, player, detail, link);
+      results.append(wrap);
+    }
+
+    cutButton.addEventListener("click", async () => {
+      const file = input.files && input.files[0];
+      if (!file || busy) return;
+
+      busy = true;
+      cutButton.disabled = true;
+      clearResults();
+
+      try {
+        await loadEngine();
+
+        if (!preview.duration || !Number.isFinite(preview.duration)) {
+          throw new Error("Durasi video belum terbaca. Putar video sebentar lalu coba lagi.");
+        }
+
+        const total = preview.duration;
+        const wanted = Number(document.getElementById("duration").value);
+        const count = Number(document.getElementById("count").value);
+        const format = document.getElementById("format").value;
+        const clipLength = Math.min(wanted, total);
+        const maxStart = Math.max(0, total - clipLength);
+        const filter = videoFilter(format);
+
+        setStatus("Membaca video...");
+        await ffmpeg.writeFile("clik-input.mp4", await fetchFile(file));
+
+        for (let i = 0; i < count; i++) {
+          const start = count === 1 ? 0 : maxStart * i / (count - 1);
+          const output = `clik-output-${i + 1}.mp4`;
+
+          setStatus(`Sedang membuat klip ${i + 1} dari ${count}. Tetap buka halaman ini...`);
+
+          await ffmpeg.exec([
+            "-ss", start.toFixed(2),
+            "-i", "clik-input.mp4",
+            "-t", clipLength.toFixed(2),
+            "-map", "0:v:0",
+            "-map", "0:a?",
+            "-vf", filter,
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-crf", "28",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-movflags", "+faststart",
+            output
+          ]);
+
+          const data = await ffmpeg.readFile(output);
+          const blob = new Blob([data], { type: "video/mp4" });
+          const url = URL.createObjectURL(blob);
+          resultUrls.push(url);
+          addResult(i + 1, url, start, clipLength);
+          await ffmpeg.deleteFile(output);
+        }
+
+        await ffmpeg.deleteFile("clik-input.mp4");
+        setStatus(`Selesai! ${count} klip berhasil dibuat. Unduh satu per satu di bagian Hasil klip.`);
+      } catch (error) {
+        console.error(error);
+        setStatus(`Gagal memproses video: ${error.message || error}. Coba video lebih pendek atau kecil, lalu muat ulang halaman.`);
+      } finally {
+        busy = false;
+        cutButton.disabled = !input.files.length;
+      }
+    });
+  </script>
+</body>
+</html>
