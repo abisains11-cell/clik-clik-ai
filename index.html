@@ -1,1 +1,176 @@
 
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#a78bfa">
+<title>Clik Clik AI</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#f8f5ff;
+ color:#352b50;
+}
+header{
+ background:linear-gradient(135deg,#a78bfa,#f0abfc);
+ color:white;padding:25px 20px;
+ border-radius:0 0 25px 25px;
+}
+header h1{margin:0;font-size:28px}
+header p{margin:8px 0 0;font-size:13px}
+main{padding:18px;max-width:600px;margin:auto}
+.card{
+ background:white;padding:18px;
+ border-radius:18px;margin-bottom:16px;
+ box-shadow:0 4px 15px #7861a51a;
+}
+h3{margin-top:0}
+.upload{
+ border:2px dashed #c4a8f7;
+ border-radius:15px;padding:25px 12px;
+ text-align:center;background:#faf7ff;
+}
+.upload label{
+ display:inline-block;background:#a78bfa;
+ color:white;padding:12px 20px;
+ border-radius:12px;font-weight:bold;
+ cursor:pointer;
+}
+input[type=file]{display:none}
+video{width:100%;border-radius:12px;margin-top:15px}
+select,button{
+ width:100%;padding:13px;border-radius:12px;
+ border:1px solid #e2d7f5;
+ margin-top:10px;font-size:15px;
+}
+button{
+ background:#a78bfa;color:white;
+ border:0;font-weight:bold;cursor:pointer;
+}
+button:disabled{opacity:.5}
+.secondary{background:#f1eaff;color:#6545a0}
+.status{
+ background:#f4efff;padding:13px;
+ border-radius:12px;font-size:13px;
+ line-height:1.6;
+}
+footer{text-align:center;color:#9888aa;font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+
+<header>
+ <h1>✨ Clik Clik AI</h1>
+ <p>Automatic Video Clipper</p>
+ <p>Ubah video panjang menjadi klip menarik!</p>
+</header>
+
+<main>
+ <div class="card">
+  <h3>🎬 Upload Video</h3>
+  <div class="upload">
+   <div style="font-size:38px">📹</div>
+   <p>Pilih video dari galeri HP kamu</p>
+   <label for="videoInput">Pilih Video</label>
+   <input type="file" id="videoInput" accept="video/*">
+  </div>
+  <video id="preview" controls playsinline hidden></video>
+  <p id="fileInfo" style="font-size:12px;color:#8b7a9d"></p>
+ </div>
+
+ <div class="card">
+  <h3>🤖 Pengaturan AI Clip</h3>
+  <label>Durasi setiap klip</label>
+  <select id="duration">
+   <option value="15">15 detik</option>
+   <option value="30" selected>30 detik</option>
+   <option value="45">45 detik</option>
+   <option value="60">60 detik</option>
+  </select>
+
+  <label>Jumlah klip yang diinginkan</label>
+  <select id="count">
+   <option>3</option>
+   <option selected>5</option>
+   <option>10</option>
+   <option>15</option>
+  </select>
+
+  <label>Format video</label>
+  <select id="format">
+   <option value="9:16">Vertikal 9:16 (TikTok/Reels)</option>
+   <option value="16:9">Horizontal 16:9 (YouTube)</option>
+   <option value="1:1">Kotak 1:1</option>
+  </select>
+ </div>
+
+ <div class="card">
+  <h3>✂️ AI Auto Clipper</h3>
+  <div class="status" id="status">
+   Silakan upload video terlebih dahulu.
+  </div>
+  <button id="analyze" disabled>✨ AI AUTO SELECT & CUT</button>
+  <p style="font-size:11px;color:#9b8baa">
+   Pemilihan momen dan pemotongan otomatis memerlukan
+   koneksi ke mesin AI pemrosesan video.
+  </p>
+ </div>
+
+ <div class="card">
+  <h3>📂 Hasil Klip</h3>
+  <div id="results" class="status">
+   Belum ada klip yang diproses.
+  </div>
+ </div>
+</main>
+
+<footer>
+ Clik Clik AI © 2026<br>
+ Create your best moments ✨
+</footer>
+
+<script>
+const input=document.getElementById('videoInput');
+const preview=document.getElementById('preview');
+const info=document.getElementById('fileInfo');
+const analyze=document.getElementById('analyze');
+const status=document.getElementById('status');
+let videoURL=null;
+
+input.addEventListener('change',()=>{
+ const file=input.files[0];
+ if(!file)return;
+
+ if(!file.type.startsWith('video/')){
+  alert('Pilih file video ya!');
+  return;
+ }
+
+ if(videoURL)URL.revokeObjectURL(videoURL);
+ videoURL=URL.createObjectURL(file);
+
+ preview.src=videoURL;
+ preview.hidden=false;
+ info.textContent=file.name+' • '+(file.size/1024/1024).toFixed(2)+' MB';
+
+ status.textContent='Video berhasil dimuat! Pengaturan AI siap.';
+ analyze.disabled=false;
+});
+
+analyze.addEventListener('click',()=>{
+ if(!input.files.length)return;
+
+ status.textContent=
+ 'Video siap dianalisis. Mesin AI Auto Select & Cut belum terhubung. Tahap berikutnya adalah memasang backend AI agar bisa mendeteksi momen menarik dan menghasilkan file klip sungguhan.';
+
+ document.getElementById('results').textContent=
+ 'Video sudah dipilih. Belum ada hasil klip yang dibuat.';
+});
+</script>
+
+</body>
+</html>
+
